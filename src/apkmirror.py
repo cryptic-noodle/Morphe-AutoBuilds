@@ -2,6 +2,7 @@ import re
 import json
 import logging
 from bs4 import BeautifulSoup
+from urllib.parse import quote
 from src import session
 
 base_url = "https://www.apkmirror.com"
@@ -92,19 +93,23 @@ def get_download_link(version: str, app_name: str, config: dict, arch: str = Non
         # Generate ALL possible URL patterns in priority order
         url_patterns = []
         
+        # URL-encode the release_name to handle unicode characters like ․
+        encoded_release_name = quote(release_name, safe='')
+        encoded_name = quote(config['name'], safe='')
+        
         # Priority 1: With release_name and -release suffix (most specific)
-        url_patterns.append(f"{base_url}/apk/{config['org']}/{config['name']}/{release_name}-{current_ver_str}-release/")
+        url_patterns.append(f"{base_url}/apk/{config['org']}/{encoded_name}/{encoded_release_name}-{current_ver_str}-release/")
         
         # Priority 2: With app name and -release suffix
         if release_name != config['name']:
-            url_patterns.append(f"{base_url}/apk/{config['org']}/{config['name']}/{config['name']}-{current_ver_str}-release/")
+            url_patterns.append(f"{base_url}/apk/{config['org']}/{encoded_name}/{encoded_name}-{current_ver_str}-release/")
         
         # Priority 3: With release_name without -release
-        url_patterns.append(f"{base_url}/apk/{config['org']}/{config['name']}/{release_name}-{current_ver_str}/")
+        url_patterns.append(f"{base_url}/apk/{config['org']}/{encoded_name}/{encoded_release_name}-{current_ver_str}/")
         
         # Priority 4: With app name without -release
         if release_name != config['name']:
-            url_patterns.append(f"{base_url}/apk/{config['org']}/{config['name']}/{config['name']}-{current_ver_str}/")
+            url_patterns.append(f"{base_url}/apk/{config['org']}/{encoded_name}/{encoded_name}-{current_ver_str}/")
         
         # Remove duplicate patterns
         url_patterns = list(dict.fromkeys(url_patterns))
