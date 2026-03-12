@@ -4,6 +4,6 @@
     "type": "APK", 
     "arch": "universal",
     "dpi": "nodpi",
-    "package" : "com.busuu.android.enc",
+    "package" : "ginlemon.flowerfree",
     "version" : ""
 }
