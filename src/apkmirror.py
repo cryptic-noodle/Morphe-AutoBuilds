@@ -8,26 +8,32 @@ base_url = "https://www.apkmirror.com"
 
 def get_build_number_for_version(version: str, config: dict) -> tuple[str | None, str]:
     """Fetch build number for a specific version from APKMirror.
-    Returns (build_number, format_type) where format_type is 'parentheses' or 'build_suffix'"""
+    Returns (build_number, format_type) where format_type is 'parentheses' or 'build_suffix'.
+    Returns the LOWEST build number found, since patches are typically made for initial builds."""
     try:
         main_url = f"{base_url}/apk/{config['org']}/{config['name']}/"
         response = session.get(main_url)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, "html.parser")
-            # Find all version links
+            # Collect all build numbers for this version
+            builds_found = []
             for link in soup.find_all('a', href=True):
-                href = link['href']
                 text = link.get_text()
-                # Check if this link is for our version
                 if version in text:
                     # Format 1: "32.30.0(1575420)" -> parentheses
                     build_match = re.search(rf'{re.escape(version)}\((\d+)\)', text)
                     if build_match:
-                        return build_match.group(1), 'parentheses'
+                        builds_found.append((build_match.group(1), 'parentheses'))
                     # Format 2: "6.6 build 006" -> build suffix
                     build_match = re.search(rf'{re.escape(version)}\s+build\s+(\d+)', text, re.IGNORECASE)
                     if build_match:
-                        return build_match.group(1), 'build_suffix'
+                        builds_found.append((build_match.group(1), 'build_suffix'))
+            
+            # Return the lowest build number (patches are typically for initial builds)
+            if builds_found:
+                # Sort by build number (as integer) and return the lowest
+                builds_found.sort(key=lambda x: int(x[0]))
+                return builds_found[0]
     except Exception as e:
         logging.debug(f"Could not fetch build number: {e}")
     return None, None
